@@ -63,10 +63,3 @@ Each model was trained using a train-test split (80-20) and evaluated using stan
   - `scikit-learn` (`RandomForestClassifier`, `SVC`, `GradientBoostingClassifier`, `LinearRegression`, etc.)
 
 ---
-
-## 🚀 How to Run
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-username/customer-churn-prediction.git
-   cd customer-churn-prediction
