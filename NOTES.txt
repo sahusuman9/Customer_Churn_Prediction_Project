@@ -1,0 +1,163 @@
+CHURN MODEL NOTES
+------------------
+
+*********ONE-HOT ENCODING***********
+
+What is One-Hot Encoding?
+One-hot encoding is a technique used to convert categorical variables—which are often text-based or non-numerical—into a numerical format that machine learning algorithms can understand and process. Most algorithms require numerical input, and simply assigning a number to each category can be misleading (e.g., assigning "France" as 1, "Germany" as 2, and "Spain" as 3 might imply an ordinal relationship where none exists). One-hot encoding avoids this by creating new binary columns, one for each category.
+
+For example, if the Geography column contains the categories 'France', 'Germany', and 'Spain', one-hot encoding will create three new columns: Geography_France, Geography_Germany, and Geography_Spain. For each row in the DataFrame, a 1 will be placed in the column corresponding to its original category, and 0s in the others.
+
+
+Breakdown of the Code
+pd.get_dummies(): This is a function from the pandas library. It's the primary tool for performing one-hot encoding. The term "dummies" refers to the new binary columns created.
+
+df: This is the DataFrame you are working with. The function will create new columns within this DataFrame and assign the result back to df.
+
+columns=['Geography']: This argument specifies the column or list of columns that you want to encode. In this case, we are only targeting the Geography column.
+
+drop_first=True: This is a very important parameter. It prevents a problem known as the dummy variable trap or multicollinearity. When you have N categories, you only need N−1 new binary columns to represent all the information. The last category can be inferred from the others. For example, if a row has a 0 in both Geography_Germany and Geography_Spain, you know it must be 'France'. By dropping one of the newly created columns (e.g., Geography_France), we avoid redundant information, which can cause issues for some regression models. This is generally considered a best practice unless there's a specific reason not to.
+
+
+Use One-Hot Encoding when:
+The data is nominal: This is the most important rule. Use it for categories without a logical order, like City, Gender, or Product_Type.
+
+The number of unique categories is small: A manageable number of categories won't create too many new columns, preventing the curse of dimensionality (a problem where a large number of features can make a model perform poorly). A rule of thumb is to use it when there are fewer than 15-20 categories.
+
+You're using linear models or kernel-based algorithms: Algorithms like Logistic Regression, Support Vector Machines (SVMs), and k-Nearest Neighbors (k-NN) are sensitive to false ordinal relationships and perform best with one-hot encoded data.
+
+
+Avoid One-Hot Encoding when:
+The data is ordinal: If your categories have a natural order, like Education_Level ('High School', 'Bachelor's', 'Master's'), then label encoding is a better choice. The numerical representation (0, 1, 2) correctly captures the ranking. Tree-based models like Decision Trees, Random Forests, and Gradient Boosting also handle this type of data well and can be more efficient with label encoding.
+
+There are too many unique categories: If a column has hundreds or thousands of unique values (a situation known as high cardinality), one-hot encoding will create a huge number of new columns, leading to a massive, sparse dataset. This can make the model slow to train, consume a lot of memory, and potentially lead to overfitting. In these cases, other techniques like target encoding or feature hashing are more appropriate.
+
+----------------------------------------------------------------------------------------------
+
+***********TRAIN, TEST, SPLIT*************
+
+The code X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42) is a common and crucial step in machine learning for splitting data into training and testing sets.
+
+The Purpose of Splitting Data
+When building a machine learning model, you must evaluate its performance on data it has never seen before. If you train and test the model on the same data, you risk overfitting, where the model simply memorizes the training examples instead of learning to generalize to new, unseen data. Splitting the data addresses this by providing a dedicated set of data to evaluate the model's true performance.
+
+Breakdown of the Code
+train_test_split(): This is a function from the popular sklearn.model_selection library. It automates the process of splitting arrays or matrices into random train and test subsets.
+
+X and y: These are your input datasets.
+
+X: The features or independent variables. This is typically a DataFrame containing all the columns used to make a prediction.
+
+y: The target or dependent variable. This is the column you are trying to predict.
+
+test_size=0.2: This parameter specifies the proportion of the dataset to be allocated to the test set. In this case, 20% of the data will be used for testing, and the remaining 80% will be used for training.
+
+random_state=42: This parameter is used to ensure the reproducibility of your split. The train_test_split function shuffles the data randomly before splitting. By setting a specific random_state value (like 42), you ensure that the same random shuffle is applied every time you run the code. This means you will get the exact same split, which is essential for consistent and comparable results. If you don't set this, you'll get a different split each time, and your model's performance on the test set may vary.
+
+X_train, X_test, y_train, y_test: These are the four resulting datasets.
+
+X_train: The features used to train the model (80% of X).
+
+X_test: The features used to test the model (20% of X).
+
+y_train: The corresponding targets for the training features (80% of y).
+
+y_test: The corresponding targets for the testing features (20% of y).
+
+--------------------------------------------------------------------------------------------
+
+***********FEATURE SCALING*************
+
+The Problem Feature Scaling Solves
+Many machine learning algorithms, especially those that rely on distance calculations or gradient descent (like Support Vector Machines, Logistic Regression, k-NN, and neural networks), are sensitive to the scale of the input features. If one feature has a very large range of values (e.g., Annual Income from 10,000 to 1,000,000) and another has a small range (e.g., Age from 18 to 70), the feature with the larger range will dominate the distance calculations. This can lead to a biased model that gives too much weight to the larger-scale features and performs poorly. Feature scaling addresses this by standardizing the range of all features.
+
+Breakdown of the Code
+scaler = StandardScaler(): This creates an instance of the StandardScaler class from the sklearn.preprocessing library. This object is what will perform the scaling.
+
+X_train = scaler.fit_transform(X_train): This is the most important part.
+
+fit(): The scaler first fits to the X_train data. This means it calculates the mean and standard deviation for each feature in the training set. It learns the "rules" of scaling from the training data.
+
+transform(): After fitting, the scaler then transforms the X_train data. It uses the calculated mean and standard deviation to standardize each feature. The formula for standardization is: z=(x−u)/s, where x is the original value, u is the mean, and s is the standard deviation. The result is a new X_train where each feature now has a mean of approximately 0 and a standard deviation of 1.
+
+X_test = scaler.transform(X_test):
+
+Crucially, you only use transform() on the X_test data. You do not use fit_transform(). This is because the test data is meant to be a proxy for unseen, real-world data. We should not allow our model to "see" any information about the test data during preprocessing.
+
+The transform() method applies the exact same mean and standard deviation that were learned from the training data to the X_test data. This ensures that the training and testing data are scaled consistently, which is critical for making valid predictions.
+
+----------------------------------------------------------------------------------------------
+
+****************RANDOM FOREST**************
+
+What is a Random Forest? 🌳🌳🌳
+A Random Forest is an ensemble learning method, meaning it combines multiple individual models to improve overall performance. Specifically, it's a collection of many decision trees. The "randomness" comes from two key aspects:
+
+Random Subset of Data: Each tree in the forest is trained on a different, random subset of the training data (a process called bootstrapping).
+
+Random Subset of Features: When building each tree, at every split, the algorithm considers only a random subset of the available features. This prevents a few dominant features from influencing every tree, ensuring a greater diversity among the individual trees.
+
+To make a prediction, the Random Forest gets a prediction from each individual decision tree. For classification tasks, it uses a majority vote: the class predicted most often by the trees is the final prediction.
+
+The power of a Random Forest lies in this diversity. While a single decision tree might be prone to overfitting, combining hundreds of diverse trees helps to reduce variance and produce a more robust and accurate model.
+
+Breakdown of the Code
+RandomForestClassifier(): This is the class from the sklearn.ensemble library used to create a Random Forest model for classification tasks (predicting a categorical outcome). If you were predicting a continuous value, you would use RandomForestRegressor.
+
+n_estimators=100: This parameter specifies the number of decision trees in the forest. Generally, a higher number of estimators improves performance, but also increases computation time. 100 is a common starting point.
+
+random_state=42: This parameter ensures the reproducibility of the model. The random process of selecting data and features would result in a different model each time you run the code. By setting random_state to a fixed value, you ensure that the same random subsets are chosen every time, which is essential for consistent and comparable results.
+
+model.fit(X_train, y_train): This is the step where the model is trained.
+
+model: The RandomForestClassifier object you created.
+
+fit(): This is the method that trains the model.
+
+X_train: The training features (the independent variables).
+
+y_train: The training targets (the dependent variable).
+
+During this fit step, the model builds 100 decision trees, each trained on a random subset of X_train and y_train while considering a random subset of features at each split.
+
+----------------------------------------------------------------------------------------------
+
+***************METRICS******************
+
+1. Confusion Matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+
+A confusion matrix is a table that summarizes the performance of a classification algorithm. It shows the number of correct and incorrect predictions made by the model compared to the actual outcomes.
+
+The matrix has four key components:
+
+True Positives (TP): The number of correct positive predictions. The model correctly identified a positive case.
+
+True Negatives (TN): The number of correct negative predictions. The model correctly identified a negative case.
+
+False Positives (FP): The number of incorrect positive predictions. The model predicted a positive case, but it was actually negative. This is also known as a Type I error.
+
+False Negatives (FN): The number of incorrect negative predictions. The model predicted a negative case, but it was actually positive. This is also known as a Type II error.
+
+The confusion matrix provides a detailed breakdown of the model's performance, which is more informative than simple accuracy, especially in imbalanced datasets.
+
+2. Classification Report
+class_report = classification_report(y_test, y_pred)
+
+The classification report is a text-based summary of the precision, recall, and F1-score for each class. It's often easier to read than a confusion matrix, as it presents these key metrics in a clear format.
+
+Precision: The ratio of correctly predicted positive observations to the total predicted positive observations. A high precision indicates a low false positive rate. Precision=TP/(TP+FP)
+
+Recall (Sensitivity): The ratio of correctly predicted positive observations to all actual positive observations. A high recall indicates a low false negative rate. Recall=TP/(TP+FN)
+
+F1-Score: The harmonic mean of precision and recall. It's a good metric to use when you need to balance both precision and recall, especially with uneven class distributions. F1=2∗(Precision∗Recall)/(Precision+Recall)
+
+Support: The number of actual occurrences of the class in the specified dataset.
+
+3. Accuracy Score
+accuracy = accuracy_score(y_test, y_pred)
+
+Accuracy is the simplest and most intuitive performance metric. It's the ratio of correctly predicted observations to the total number of observations. While easy to understand, accuracy can be misleading, especially with imbalanced datasets. For example, if 95% of your data is from one class, a model that simply predicts that class every time would have 95% accuracy, but it would be a useless model.
+
+Accuracy=(TP+TN)/(TP+TN+FP+FN)
+
